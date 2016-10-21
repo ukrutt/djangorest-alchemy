@@ -6,8 +6,8 @@ import unittest
 
 import mock
 import six
-from django.conf.urls import include, patterns, url
-from django.test import TestCase
+from django.conf.urls import include, url
+from django.test import TestCase, Client
 from rest_framework import status, viewsets
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
@@ -24,7 +24,6 @@ from .utils import (
     DeclarativeModel,
     SessionMixin,
 )
-
 
 RESULTS_KEY = "results"
 COUNT_KEY = "count"
@@ -101,15 +100,15 @@ child_router = routers.NestedSimpleRouter(viewset_router, r'api/declmodels',
 child_router.register("childmodels", ChildModelViewSet,
                       base_name='test-childmodel')
 
-urlpatterns = patterns('',
-                       url(r'^', include(viewset_router.urls)),
-                       url(r'^', include(child_router.urls)),
-                       )
+urlpatterns = [
+    url(r'^', include(viewset_router.urls)),
+    url(r'^', include(child_router.urls)),
+]
 
 
 class TestAlchemyViewSetIntegration(TestCase):
     def test_decl_list(self):
-        resp = self.client.get('/api/declmodels/')
+        resp = Client().get('/api/declmodels/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertTrue(len(resp.data[RESULTS_KEY]) == 1)
@@ -117,7 +116,7 @@ class TestAlchemyViewSetIntegration(TestCase):
         self.assertTrue(resp.data[PAGE_KEY] == 25)
 
     def test_decl_retrieve(self):
-        resp = self.client.get('/api/declmodels/1/')
+        resp = Client().get('/api/declmodels/1/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertEqual(resp.data['declarativemodel_id'], 1)
@@ -127,13 +126,13 @@ class TestAlchemyViewSetIntegration(TestCase):
         self.assertIsInstance(resp.data['bigintfield'], six.integer_types)
 
     def test_classical_list(self):
-        resp = self.client.get('/api/clsmodels/?field=test')
+        resp = Client().get('/api/clsmodels/?field=test')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertTrue(len(resp.data[RESULTS_KEY]) == 1)
 
     def test_classical_retrieve(self):
-        resp = self.client.get('/api/clsmodels/1/')
+        resp = Client().get('/api/clsmodels/1/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertEqual(resp.data['classicalmodel_id'], 1)
@@ -144,7 +143,7 @@ class TestAlchemyViewSetIntegration(TestCase):
     #
 
     def test_with_multiple_pk_retrieve(self):
-        resp = self.client.get('/api/compositemodels/1/',
+        resp = Client().get('/api/compositemodels/1/',
                                PK1='ABCD', PK2='WXYZ')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
@@ -153,8 +152,10 @@ class TestAlchemyViewSetIntegration(TestCase):
         self.assertEqual(resp.data['pk2'], 'WXYZ')
 
     def test_hierarchical_multiple_pk_retrieve(self):
-        resp = self.client.get('/api/declmodels/1/childmodels/2/')
+        resp = Client().get('/api/declmodels/1/childmodels/2/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # import json
+        # print(json.dumps(resp.data))
         self.assertEqual(resp.data['childmodel_id'], 2)
         self.assertEqual(resp.data['parent_id'], 1)
 
@@ -163,30 +164,30 @@ class TestAlchemyViewSetIntegration(TestCase):
     #
 
     def test_basic_filter(self):
-        resp = self.client.get('/api/declmodels/?field=test')
+        resp = Client().get('/api/declmodels/?field=test')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertTrue(len(resp.data[RESULTS_KEY]) == 1)
 
     def test_invalid_filter(self):
-        resp = self.client.get('/api/declmodels/?field=invalid')
+        resp = Client().get('/api/declmodels/?field=invalid')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertTrue(len(resp.data[RESULTS_KEY]) == 0)
 
     def test_basic_pagination(self):
-        resp = self.client.get('/api/declmodels/?page=1')
+        resp = Client().get('/api/declmodels/?page=1')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertTrue(len(resp.data[RESULTS_KEY]) == 1)
 
-        resp = self.client.get('/api/declmodels/?page=last')
+        resp = Client().get('/api/declmodels/?page=last')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsInstance(resp.data, dict)
         self.assertTrue(len(resp.data[RESULTS_KEY]) == 1)
 
     def test_invalid_pagination(self):
-        resp = self.client.get('/api/declmodels/?page=foo')
+        resp = Client().get('/api/declmodels/?page=foo')
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     #
@@ -194,7 +195,7 @@ class TestAlchemyViewSetIntegration(TestCase):
     #
 
     def test_action_method(self):
-        resp = self.client.post('/api/declmodels/1/do_something/')
+        resp = Client().post('/api/declmodels/1/do_something/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
 
@@ -225,6 +226,7 @@ class TestAlchemyViewSetUnit(unittest.TestCase):
         Test override get_other_pks
         and assert return value
         '''
+
         # Test overriding
         class MockViewSet(AlchemyModelViewSet):
             def get_other_pks(self, request):

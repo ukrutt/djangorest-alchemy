@@ -2,7 +2,7 @@
 Base AlchemyModelSerializer which provides the mapping between
 SQLALchemy and DRF fields to serialize/deserialize objects
 '''
-from django.utils.datastructures import SortedDict
+from collections import OrderedDict
 from rest_framework import serializers
 from rest_framework.fields import (
     BooleanField,
@@ -71,7 +71,7 @@ class AlchemyModelSerializer(serializers.Serializer):
 
     def get_fields(self):
 
-        ret = SortedDict()
+        ret = OrderedDict()
 
         mapper = class_mapper(self.cls.__class__)
 
@@ -115,7 +115,7 @@ class AlchemyModelSerializer(serializers.Serializer):
 
 class AlchemyListSerializer(AlchemyModelSerializer):
     def get_fields(self):
-        ret = SortedDict()
+        ret = OrderedDict()
 
         try:
             # URI field for get pk field

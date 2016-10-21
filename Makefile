@@ -28,7 +28,7 @@ lint:
 	flake8 djangorest_alchemy > flake8.out
 
 test:
-	 DJANGO_SETTINGS_MODULE=djangorest_alchemy.settings nosetests
+	 DJANGO_SETTINGS_MODULE=djangorest_alchemy.tests.test_settings nosetests
 
 test-all:
 	tox
