@@ -19,14 +19,14 @@ def class_keys(cls):
     # >>> class_keys(Deal)
     # >>> ('dealer_code', 'deal_jacket_id', 'deal_id')
     """
-    reverse_map = {}
+    primary_keys = []
     for name, attr in public_vars(cls).items():
         try:
-            reverse_map[attr.property.columns[0].name] = name
-        except:
+            if len(attr) and attr[0].primary_key is True:
+                primary_keys.append(name)
+        except Exception, e:
             pass
-    mapper = class_mapper(cls)
-    return tuple(reverse_map[key.name] for key in mapper.primary_key)
+    return tuple(primary_keys)
 
 
 def primary_key(cls):

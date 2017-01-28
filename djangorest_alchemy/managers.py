@@ -66,10 +66,10 @@ class AlchemyModelManager(object):
                         **filter_dict).all()
             else:
                 if pk:
-                    queryset = self.session.query(self.cls.__dict__[pk]).all()
+                    queryset = self.session.query(self.cls.__dict__[pk]).limit(100).all()
                 else:
                     # Limit to 1000 rows, this is worst case scenario
-                    queryset = self.session.query(self.cls).limit(1000).all()
+                    queryset = self.session.query(self.cls).limit(100).all()
 
         return queryset
 
