@@ -21,6 +21,7 @@ from sqlalchemy.types import (
     DATE,
     DECIMAL,
     INTEGER,
+    Integer,
     SMALLINT,
     TIMESTAMP,
     VARCHAR,
@@ -45,6 +46,7 @@ class AlchemyModelSerializer(serializers.Serializer):
     field_mapping = {
         String: CharField,
         INTEGER: IntegerField,
+        Integer: IntegerField,
         SMALLINT: IntegerField,
         BIGINT: IntegerField,
         VARCHAR: CharField,
@@ -91,10 +93,12 @@ class AlchemyModelSerializer(serializers.Serializer):
                 field_nm = str(col_prop).split('.')[1]
                 field_cls = col_prop.columns[0].type.__class__
 
-                assert field_cls in self.field_mapping, \
-                    "Field %s has not been mapped" % field_cls
-
-                ret[field_nm] = self.field_mapping[field_cls]()
+                try:
+                    mapping = self.field_mapping[field_cls]()
+                except KeyError:
+                    err = "unknown mapping for field '{}'".format(field_cls)
+                    mapping = CharField()
+                ret[field_nm] = mapping
 
         # Get all the relationship fields
         for rel_prop in mapper.iterate_properties:
